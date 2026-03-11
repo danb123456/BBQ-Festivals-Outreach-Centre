@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lead, LeadStatus } from '../types';
-import { draftEmail } from '../lib/gemini';
-import { X, Mail, Building2, User, Briefcase, Globe, MessageSquare, Loader2, Save, Send, Target, Megaphone, Leaf, History, Zap, AlertTriangle } from 'lucide-react';
+import { draftEmail, draftEmailStream } from '../lib/gemini';
+import { X, Mail, Building2, User, Briefcase, Globe, MessageSquare, Loader2, Save, Send, Target, Megaphone, Leaf, History, Zap, AlertTriangle, Sparkles } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -64,10 +64,18 @@ export default function LeadDetails({
 
   const handleDraftEmail = async () => {
     setIsDrafting(true);
+    setEmailContent(''); // Clear existing content to show progress
+    let fullDraft = '';
+    
     try {
-      const draft = await draftEmail(lead, projectName, projectDescription, user);
-      setEmailContent(draft);
-      onUpdate(lead.id, { draftEmail: draft });
+      const stream = draftEmailStream(lead, projectName, projectDescription, user);
+      
+      for await (const chunk of stream) {
+        fullDraft += chunk;
+        setEmailContent(fullDraft);
+      }
+      
+      onUpdate(lead.id, { draftEmail: fullDraft });
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Failed to draft email');
@@ -247,7 +255,7 @@ export default function LeadDetails({
                 disabled={isDrafting}
                 className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100 disabled:opacity-50 flex items-center gap-2 transition-colors"
               >
-                {isDrafting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                {isDrafting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 {emailContent ? 'Regenerate Draft' : 'Draft with AI'}
               </button>
             </div>

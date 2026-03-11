@@ -79,6 +79,48 @@ export async function generateLeads(niche: string, projectName: string = "Savour
   }
 }
 
+export async function* draftEmailStream(lead: any, projectName: string = "Savour Festival", projectDescription: string = "", user: any = null) {
+  const ai = getAI();
+  const userName = user?.displayName || "Sales Director";
+  const userEmail = user?.email || "";
+  
+  const prompt = `You are ${userName}, working on a project called "${projectName}". ${projectDescription ? `Project Description: ${projectDescription}` : ''}
+  Write a highly personalized, engaging, and professional outreach email to ${lead.contactName}, the ${lead.role} at ${lead.company}.
+  
+  Use the following context to dynamically insert personalized talking points:
+  - Reasoning for outreach: ${lead.reasoning}
+  - Recent Campaigns/Social Media: ${lead.recentCampaigns}
+  - Recent Product Launches: ${lead.recentLaunches}
+  - CSR Alignment: ${lead.csrAlignment}
+  - Previous Sponsorships: ${lead.previousSponsorships}
+  
+  Craft a value proposition that directly addresses the potential benefits of sponsoring or exhibiting at our project, tailored to their specific industry (${lead.productCategory}) and goals.
+  Ensure the tone is professional and engaging, suitable for a senior-level contact.
+  
+  Keep it concise (under 200 words). Do not include a Subject line, just the email body. Sign off as "${userName}, ${projectName}"${userEmail ? ` and include your email ${userEmail}` : ''}.`;
+
+  console.log('Streaming email draft for lead:', lead.company);
+  try {
+    const response = await ai.models.generateContentStream({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        temperature: 0.7,
+      },
+    });
+
+    for await (const chunk of response) {
+      const text = chunk.text;
+      if (text) {
+        yield text;
+      }
+    }
+  } catch (err: any) {
+    console.error('Error in draftEmailStream:', err);
+    throw err;
+  }
+}
+
 export async function draftEmail(lead: any, projectName: string = "Savour Festival", projectDescription: string = "", user: any = null) {
   const ai = getAI();
   const userName = user?.displayName || "Sales Director";
