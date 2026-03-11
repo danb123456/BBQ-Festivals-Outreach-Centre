@@ -272,7 +272,9 @@ export default function LeadDetails({
                 />
                 <div className="flex justify-end gap-3">
                   <a
-                    href={`mailto:${lead.email}?subject=${encodeURIComponent(`Invitation: ${lead.company} x ${projectName}`)}&body=${encodeURIComponent(emailContent)}`}
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${lead.email}&su=${encodeURIComponent(`Invitation: ${lead.company} x ${projectName}`)}&body=${encodeURIComponent(emailContent)}`}
+                    target="_blank"
+                    rel="noreferrer"
                     onClick={() => {
                       if (lead.status === 'red') {
                         onUpdate(lead.id, { status: 'orange' });
@@ -281,7 +283,7 @@ export default function LeadDetails({
                     className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 flex items-center gap-2 transition-colors"
                   >
                     <Send className="w-4 h-4" />
-                    Open in Mail Client
+                    Open in Gmail
                   </a>
                 </div>
               </div>
