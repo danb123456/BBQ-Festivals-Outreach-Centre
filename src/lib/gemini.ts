@@ -51,21 +51,34 @@ export async function generateLeads(niche: string, projectName: string = "Savour
   Also provide segmentation data: company size, specific product category, and previous sponsorship history.
   Ensure the output is a valid JSON array matching the schema.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      responseMimeType: 'application/json',
-      responseSchema: responseSchema,
-      temperature: 0.7,
-    },
-  });
+  console.log('Generating leads for niche:', niche);
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: responseSchema,
+        temperature: 0.7,
+      },
+    });
 
-  if (!response.text) {
-    throw new Error('Failed to generate leads');
+    console.log('Gemini response received');
+
+    if (!response.text) {
+      console.error('Gemini response text is empty');
+      throw new Error('Failed to generate leads: Empty response from AI');
+    }
+
+    const cleanedText = response.text.trim();
+    return JSON.parse(cleanedText);
+  } catch (err: any) {
+    console.error('Error in generateLeads:', err);
+    if (err.message?.includes('quota') || err.message?.includes('429')) {
+      throw new Error('AI Rate limit reached. Please wait a moment and try again.');
+    }
+    throw err;
   }
-
-  return JSON.parse(response.text);
 }
 
 export async function draftEmail(lead: any, projectName: string = "Savour Festival", projectDescription: string = "", user: any = null) {
@@ -88,13 +101,23 @@ export async function draftEmail(lead: any, projectName: string = "Savour Festiv
   
   Keep it concise (under 200 words). Do not include a Subject line, just the email body. Sign off as "${userName}, ${projectName}"${userEmail ? ` and include your email ${userEmail}` : ''}.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      temperature: 0.7,
-    },
-  });
+  console.log('Drafting email for lead:', lead.company);
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        temperature: 0.7,
+      },
+    });
 
-  return response.text;
+    if (!response.text) {
+      throw new Error('Failed to draft email: Empty response from AI');
+    }
+
+    return response.text;
+  } catch (err: any) {
+    console.error('Error in draftEmail:', err);
+    throw err;
+  }
 }

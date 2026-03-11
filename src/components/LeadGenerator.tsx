@@ -32,20 +32,25 @@ export default function LeadGenerator({
       const leads = await generateLeads(niche, projectName, projectDescription, user);
       setGeneratedLeads(leads);
       
-      // Check for existing claims
-      const companyNames = leads.map((l: any) => l.company.toLowerCase());
+      // Check for existing claims (Firestore 'in' query limit is 10)
+      const companyNames = leads.slice(0, 10).map((l: any) => l.company.toLowerCase());
       if (companyNames.length > 0) {
-        const claimsQuery = query(
-          collection(db, 'leadClaims'),
-          where('companyLower', 'in', companyNames)
-        );
-        const claimsSnapshot = await getDocs(claimsQuery);
-        const claimsMap: Record<string, any> = {};
-        claimsSnapshot.forEach(doc => {
-          const data = doc.data();
-          claimsMap[data.companyLower] = data;
-        });
-        setLeadClaims(claimsMap);
+        try {
+          const claimsQuery = query(
+            collection(db, 'leadClaims'),
+            where('companyLower', 'in', companyNames)
+          );
+          const claimsSnapshot = await getDocs(claimsQuery);
+          const claimsMap: Record<string, any> = {};
+          claimsSnapshot.forEach(doc => {
+            const data = doc.data();
+            claimsMap[data.companyLower] = data;
+          });
+          setLeadClaims(claimsMap);
+        } catch (claimsErr) {
+          console.error("Failed to fetch lead claims:", claimsErr);
+          // Don't fail the whole generation if claims check fails
+        }
       }
       
     } catch (err: any) {
