@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 
 let aiClient: GoogleGenAI | null = null;
 
@@ -60,6 +60,7 @@ export async function generateLeads(niche: string, projectName: string = "Savour
         responseMimeType: 'application/json',
         responseSchema: responseSchema,
         temperature: 0.7,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
       },
     });
 
@@ -106,6 +107,7 @@ export async function* draftEmailStream(lead: any, projectName: string = "Savour
       contents: prompt,
       config: {
         temperature: 0.7,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
       },
     });
 
@@ -148,6 +150,7 @@ export async function draftEmail(lead: any, projectName: string = "Savour Festiv
       contents: prompt,
       config: {
         temperature: 0.7,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
       },
     });
 
