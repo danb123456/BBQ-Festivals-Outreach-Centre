@@ -52,7 +52,7 @@ export async function generateLeads(niche: string, projectName: string = "Savour
   Ensure the output is a valid JSON array matching the schema.`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
       responseMimeType: 'application/json',
@@ -89,7 +89,7 @@ export async function draftEmail(lead: any, projectName: string = "Savour Festiv
   Keep it concise (under 200 words). Do not include a Subject line, just the email body. Sign off as "${userName}, ${projectName}"${userEmail ? ` and include your email ${userEmail}` : ''}.`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
       temperature: 0.7,
