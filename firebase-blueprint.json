@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "A project or campaign for organizing leads.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the project." },
+        "description": { "type": "string", "description": "A brief description of the project." },
+        "createdAt": { "type": "number", "description": "Timestamp of creation." },
+        "userId": { "type": "string", "description": "The ID of the user who owns this project." }
+      },
+      "required": ["name", "description", "createdAt", "userId"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "A potential lead for a project.",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string", "description": "The ID of the project this lead belongs to." },
+        "company": { "type": "string" },
+        "contactName": { "type": "string" },
+        "role": { "type": "string" },
+        "email": { "type": "string" },
+        "website": { "type": "string" },
+        "reasoning": { "type": "string" },
+        "status": { "type": "string", "enum": ["red", "orange", "yellow", "green"] },
+        "companySize": { "type": "string" },
+        "productCategory": { "type": "string" },
+        "previousSponsorships": { "type": "string" },
+        "recentCampaigns": { "type": "string" },
+        "recentLaunches": { "type": "string" },
+        "csrAlignment": { "type": "string" },
+        "notes": { "type": "string" },
+        "draftEmail": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp of creation." },
+        "statusUpdatedAt": { "type": "number", "description": "Timestamp of last status update." },
+        "userId": { "type": "string", "description": "The ID of the user who owns this lead." }
+      },
+      "required": [
+        "projectId", "company", "contactName", "role", "email", "website", "reasoning", "status",
+        "companySize", "productCategory", "previousSponsorships", "recentCampaigns", "recentLaunches",
+        "csrAlignment", "userId", "createdAt", "statusUpdatedAt"
+      ]
+    },
+    "FilterView": {
+      "title": "FilterView",
+      "description": "A saved filter view for a project.",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string" },
+        "name": { "type": "string" },
+        "filters": {
+          "type": "object",
+          "properties": {
+            "companySize": { "type": "string" },
+            "productCategory": { "type": "string" },
+            "previousSponsorships": { "type": "string" }
+          },
+          "required": ["companySize", "productCategory", "previousSponsorships"]
+        },
+        "userId": { "type": "string", "description": "The ID of the user who owns this filter view." }
+      },
+      "required": ["projectId", "name", "filters", "userId"]
+    },
+    "LeadClaim": {
+      "title": "LeadClaim",
+      "description": "Publicly readable status of a lead to prevent duplicate outreach.",
+      "type": "object",
+      "properties": {
+        "companyLower": { "type": "string", "description": "Lowercase company name for querying." },
+        "companyName": { "type": "string", "description": "Original company name." },
+        "status": { "type": "string", "enum": ["red", "orange", "yellow", "green"] },
+        "ownerName": { "type": "string", "description": "Name of the user who owns this lead." },
+        "ownerId": { "type": "string", "description": "The ID of the user who owns this lead." }
+      },
+      "required": ["companyLower", "companyName", "status", "ownerName", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Stores user projects."
+    },
+    "/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "description": "Stores leads associated with projects."
+    },
+    "/filterViews/{filterViewId}": {
+      "schema": { "$ref": "#/entities/FilterView" },
+      "description": "Stores saved filter views."
+    },
+    "/leadClaims/{leadId}": {
+      "schema": { "$ref": "#/entities/LeadClaim" },
+      "description": "Stores public claims for leads to prevent duplicate outreach."
+    }
+  }
+}

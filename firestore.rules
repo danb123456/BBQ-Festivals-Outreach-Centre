@@ -1,0 +1,182 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: projects
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required, max 100 chars)
+    //   - description: string (required, max 500 chars)
+    //   - createdAt: number (required)
+    //   - userId: string (required, immutable)
+    //
+    // Collection: leads
+    // Document ID: auto-generated
+    // Fields:
+    //   - projectId: string (required)
+    //   - company: string (required, max 200 chars)
+    //   - contactName: string (required, max 200 chars)
+    //   - role: string (required, max 200 chars)
+    //   - email: string (required, max 200 chars)
+    //   - website: string (required, max 500 chars)
+    //   - reasoning: string (required, max 2000 chars)
+    //   - status: string (required, enum: ['red', 'orange', 'yellow', 'green'])
+    //   - companySize: string (required, max 200 chars)
+    //   - productCategory: string (required, max 200 chars)
+    //   - previousSponsorships: string (required, max 2000 chars)
+    //   - recentCampaigns: string (required, max 2000 chars)
+    //   - recentLaunches: string (required, max 2000 chars)
+    //   - csrAlignment: string (required, max 2000 chars)
+    //   - notes: string (optional, max 5000 chars)
+    //   - draftEmail: string (optional, max 5000 chars)
+    //   - userId: string (required, immutable)
+    //
+    // Collection: filterViews
+    // Document ID: auto-generated
+    // Fields:
+    //   - projectId: string (required)
+    //   - name: string (required, max 100 chars)
+    //   - filters: map (required)
+    //     - companySize: string (required, max 200 chars)
+    //     - productCategory: string (required, max 200 chars)
+    //     - previousSponsorships: string (required, max 200 chars)
+    //   - userId: string (required, immutable)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function isCreatingWithOwnerId() {
+      return isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function userIdNotModified() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    function validOptionalStringLength(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+        (request.resource.data[field] is string &&
+         request.resource.data[field].size() >= minLen &&
+         request.resource.data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidProject() {
+      return hasOnlyAllowedFields(['name', 'description', 'createdAt', 'userId']) &&
+             validStringLength('name', 1, 100) &&
+             validStringLength('description', 0, 500) &&
+             request.resource.data.createdAt is number;
+    }
+
+    function isValidLead() {
+      return hasOnlyAllowedFields([
+               'projectId', 'company', 'contactName', 'role', 'email', 'website',
+               'reasoning', 'status', 'companySize', 'productCategory',
+               'previousSponsorships', 'recentCampaigns', 'recentLaunches',
+               'csrAlignment', 'notes', 'draftEmail', 'userId', 'createdAt', 'statusUpdatedAt'
+             ]) &&
+             validStringLength('projectId', 1, 100) &&
+             validStringLength('company', 1, 200) &&
+             validStringLength('contactName', 0, 200) &&
+             validStringLength('role', 0, 200) &&
+             validStringLength('email', 0, 200) &&
+             validStringLength('website', 0, 500) &&
+             validStringLength('reasoning', 0, 2000) &&
+             request.resource.data.status in ['red', 'orange', 'yellow', 'green'] &&
+             validStringLength('companySize', 0, 200) &&
+             validStringLength('productCategory', 0, 200) &&
+             validStringLength('previousSponsorships', 0, 2000) &&
+             validStringLength('recentCampaigns', 0, 2000) &&
+             validStringLength('recentLaunches', 0, 2000) &&
+             validStringLength('csrAlignment', 0, 2000) &&
+             validOptionalStringLength('notes', 0, 5000) &&
+             validOptionalStringLength('draftEmail', 0, 5000) &&
+             request.resource.data.createdAt is number &&
+             request.resource.data.statusUpdatedAt is number;
+    }
+
+    function isValidFilterView() {
+      return hasOnlyAllowedFields(['projectId', 'name', 'filters', 'userId']) &&
+             validStringLength('projectId', 1, 100) &&
+             validStringLength('name', 1, 100) &&
+             request.resource.data.filters is map &&
+             request.resource.data.filters.keys().hasOnly(['companySize', 'productCategory', 'previousSponsorships']) &&
+             request.resource.data.filters.companySize is string && request.resource.data.filters.companySize.size() <= 200 &&
+             request.resource.data.filters.productCategory is string && request.resource.data.filters.productCategory.size() <= 200 &&
+             request.resource.data.filters.previousSponsorships is string && request.resource.data.filters.previousSponsorships.size() <= 200;
+    }
+
+    function isValidLeadClaim() {
+      return hasOnlyAllowedFields(['companyLower', 'companyName', 'status', 'ownerName', 'ownerId']) &&
+             validStringLength('companyLower', 1, 200) &&
+             validStringLength('companyName', 1, 200) &&
+             request.resource.data.status in ['red', 'orange', 'yellow', 'green'] &&
+             validStringLength('ownerName', 1, 200) &&
+             validStringLength('ownerId', 1, 100);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /projects/{projectId} {
+      allow read: if isDocOwner();
+      allow create: if isCreatingWithOwnerId() && isValidProject();
+      allow update: if isDocOwner() && userIdNotModified() && isValidProject();
+      allow delete: if isDocOwner();
+    }
+
+    match /leads/{leadId} {
+      allow read: if isDocOwner();
+      allow create: if isCreatingWithOwnerId() && isValidLead();
+      allow update: if isDocOwner() && userIdNotModified() && isValidLead();
+      allow delete: if isDocOwner();
+    }
+
+    match /filterViews/{filterViewId} {
+      allow read: if isDocOwner();
+      allow create: if isCreatingWithOwnerId() && isValidFilterView();
+      allow update: if isDocOwner() && userIdNotModified() && isValidFilterView();
+      allow delete: if isDocOwner();
+    }
+
+    match /leadClaims/{leadId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid && isValidLeadClaim();
+      allow update: if isAuthenticated() && resource.data.ownerId == request.auth.uid && request.resource.data.ownerId == request.auth.uid && isValidLeadClaim();
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
+  }
+}
