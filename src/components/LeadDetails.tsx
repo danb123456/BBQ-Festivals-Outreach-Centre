@@ -68,9 +68,9 @@ export default function LeadDetails({
       const draft = await draftEmail(lead, projectName, projectDescription, user);
       setEmailContent(draft);
       onUpdate(lead.id, { draftEmail: draft });
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to draft email');
+      alert(err.message || 'Failed to draft email');
     } finally {
       setIsDrafting(false);
     }
